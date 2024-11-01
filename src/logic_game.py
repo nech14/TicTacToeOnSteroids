@@ -6,6 +6,7 @@ import numpy as np
 class TicTacToe():
 
     last_turn = [-1,0,0]
+    active_desk = 0
 
 
     def __init__(self):
@@ -25,6 +26,7 @@ class TicTacToe():
             return [i for i in range(9*3*3) if self.board.flatten()[i] == 0]
 
         d = self.last_turn[1]*3 + self.last_turn[2]
+        self.active_desk = d
         return [i for i in range(d*9, d*9+9) if self.board.flatten()[i] == 0]
 
 
@@ -37,6 +39,7 @@ class TicTacToe():
 
         if action in self.available_actions():
             d = action // 9
+            self.active_desk = d
             self.board[d, (action - d * 9) // 3, action % 3] = player
             self.last_turn = [d, (action - d * 9) // 3, action % 3]
 

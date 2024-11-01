@@ -1,5 +1,8 @@
+import pygame
 
 from src.DQNAgent import DQNAgent
+from src.QLearningAgent import QLearningAgent
+from src.gui import TicTacToeGUI, font, BLACK, SCREEN_SIZE, screen
 from src.logic_game import TicTacToe
 import torch
 import multiprocessing
@@ -87,9 +90,9 @@ def train(agent_id="agen_1", episodes=1000000):
 #
 #     print("end")
 
-print("start")
-train()
-print("end")
+# print("start")
+# train()
+# print("end")
 
 
 # game = TicTacToe()
@@ -128,3 +131,56 @@ print("end")
 #     n+=1
 #
 # print(f"Winner: {game.get_winner()}")
+
+
+def main():
+    play_with_bot = True
+    current_agent = QLearningAgent.load("src/merged_agent.pkl")
+
+    ttt_gui = TicTacToeGUI()
+    state = tuple(ttt_gui.game.reset())
+
+    running = True
+    while running:
+        ttt_gui.draw_board()
+
+        turn = ttt_gui.current_player
+
+        if play_with_bot and turn == 1:
+            available_actions = ttt_gui.game.available_actions()
+            action = current_agent.choose_action(state, available_actions)
+            done, next_state = ttt_gui.game.step(action, 1)
+            ttt_gui.current_player = 3 - ttt_gui.current_player
+            ttt_gui.check_winner()
+            ttt_gui.selected_board = ttt_gui.game.active_desk
+            ttt_gui.wins_boards = ttt_gui.game.won_fields
+        else:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        x, y = pygame.mouse.get_pos()
+                        ttt_gui.handle_click(x, y)
+
+        if ttt_gui.game_over:
+            ttt_gui.draw_board()
+            if ttt_gui.winner == 0:
+                winner_text = f"Draw in the game!"
+            else:
+                winner_text = f"Player {ttt_gui.winner} wins!"
+            text = font.render(winner_text, True, BLACK)
+            screen.blit(text, (SCREEN_SIZE // 2.5, SCREEN_SIZE // 2))
+            pygame.display.flip()
+            pygame.time.wait(3000)
+            running = False
+
+    pygame.quit()
+
+
+if __name__ == "__main__":
+    main()
+
+
+

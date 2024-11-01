@@ -38,6 +38,25 @@ class QLearningAgent:
         with open(file_path, 'rb') as f:
             return pickle.load(f)
 
+    def merge_agents(*agents):
+        merged_q_table = defaultdict(float)
+        counts = defaultdict(int)  # Счетчик для усреднения значений
+
+        # Проходимся по каждому агенту и их Q-таблицам
+        for agent in agents:
+            for (state, action), q_value in agent.q_table.items():
+                merged_q_table[(state, action)] += q_value
+                counts[(state, action)] += 1
+
+        # Усредняем Q-значения
+        for key in merged_q_table:
+            merged_q_table[key] /= counts[key]
+
+        # Создаем нового агента с объединенной Q-таблицей
+        merged_agent = QLearningAgent()
+        merged_agent.q_table = merged_q_table
+        return merged_agent
+
 
 def train_single_game(agent1, agent2):
     game = TicTacToe()
@@ -83,8 +102,14 @@ def parallel_training(episodes=10000, num_workers=4):
             if i % 100000 == 0:
                 agent1.save(f"agent1_{i}.pkl")
                 agent2.save(f"agent2_{i}.pkl")
+            if i % 10000 == 0:
+                print(f"end i:{i}/{episodes}")
 
-    return agent1, agent2
+    # Объединяем знания агентов после завершения всех эпизодов
+    merged_agent = QLearningAgent.merge_agents(agent1, agent2)
+    merged_agent.save("merged_agent.pkl")
+
+    return merged_agent
 
 
 if __name__ == '__main__':
@@ -92,7 +117,12 @@ if __name__ == '__main__':
 
     freeze_support()
 
-    agent1, agent2 = parallel_training(episodes=100000, num_workers=4)
+    # agent = parallel_training(episodes=1000000, num_workers=4)
+    current_agent1 = QLearningAgent.load("agent1_600000.pkl")
+    current_agent2 = QLearningAgent.load("agent2_600000.pkl")
+
+    merged_agent = QLearningAgent.merge_agents(current_agent1, current_agent2)
+    merged_agent.save("merged_agent.pkl")
 
     # game = TicTacToe()
     # state = tuple(game.reset())
