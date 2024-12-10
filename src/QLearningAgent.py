@@ -74,9 +74,16 @@ def train_single_game(agent1, agent2):
 
         if done:
             winner = game.get_winner()
-            reward = 1 if winner == player else -1 if winner != 0 else 0
+            reward = 1 if winner == player else -1.5 if winner != 0 else -1
+            reward += sum(1 for x in game.won_fields if x == player) * 0.2
+            reward -= sum(1 for x in game.won_fields if x != player) * 0.1
             current_agent.update_q_value(state, action, reward, next_state, [])
-            opponent_agent.update_q_value(state, action, -reward, next_state, [])
+
+            player = 3 - player
+            reward = 1 if winner == player else -1.5 if winner != 0 else -1
+            reward += sum(1 for x in game.won_fields if x == player) * 0.2
+            reward -= sum(1 for x in game.won_fields if x != player) * 0.1
+            opponent_agent.update_q_value(state, action, reward, next_state, [])
         else:
             next_actions = game.available_actions()
             current_agent.update_q_value(state, action, 0, next_state, next_actions)
@@ -85,44 +92,59 @@ def train_single_game(agent1, agent2):
         current_agent, opponent_agent = opponent_agent, current_agent
         player = 3 - player
 
-    with open(f"log.txt", 'a') as f:  # Логи для каждого агента
+    with open(f"log1.txt", 'a') as f:  # Логи для каждого агента
         f.write(f"Player: {player}, Winner: {game.get_winner()}\n")
 
     return agent1, agent2
 
 
-def parallel_training(episodes=10000, num_workers=4):
-    agent1 = QLearningAgent()
-    agent2 = QLearningAgent()
+# def parallel_training(episodes=10000, num_workers=4, agent1=QLearningAgent(), agent2=QLearningAgent()):
+#
+#     with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
+#         futures = [executor.submit(train_single_game, agent1, agent2) for _ in range(episodes)]
+#         for i, future in enumerate(as_completed(futures), start=1):
+#             agent1, agent2 = future.result()
+#             if i % 100000 == 0:
+#                 agent1.save(f"agent1_{600000+i}.pkl")
+#                 agent2.save(f"agent2_{600000+i}.pkl")
+#
+#     # Объединяем знания агентов после завершения всех эпизодов
+#     merged_agent = QLearningAgent.merge_agents(agent1, agent2)
+#     merged_agent.save("merged_agent.pkl")
+#
+#     return merged_agent
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(train_single_game, agent1, agent2) for _ in range(episodes)]
-        for i, future in enumerate(as_completed(futures), start=1):
-            agent1, agent2 = future.result()
-            if i % 100000 == 0:
-                agent1.save(f"agent1_{i}.pkl")
-                agent2.save(f"agent2_{i}.pkl")
-            if i % 10000 == 0:
-                print(f"end i:{i}/{episodes}")
 
-    # Объединяем знания агентов после завершения всех эпизодов
+def sequential_training(episodes=10000, agent1=QLearningAgent(), agent2=QLearningAgent(), start_i=0):
+    for episode in range(episodes):
+        agent1, agent2 = train_single_game(agent1, agent2)
+
+        if episode % 1000 == 0:
+            agent1.save(fr"../AI/agent1_{episode+start_i}.pkl")
+            agent2.save(f"../AI/agent2_{episode+start_i}.pkl")
+            print(f"episode: {episode}")
+
     merged_agent = QLearningAgent.merge_agents(agent1, agent2)
     merged_agent.save("merged_agent.pkl")
-
     return merged_agent
 
 
+
 if __name__ == '__main__':
-    from multiprocessing import freeze_support
+    # from multiprocessing import freeze_support
+    #
+    # freeze_support()
 
-    freeze_support()
+    agent1 = QLearningAgent()
+    agent2 = QLearningAgent()
+    # agent1 = QLearningAgent.load("../AI/agent1_9000.pkl")
+    # agent2 = QLearningAgent.load("../AI/agent2_9000.pkl")
 
-    # agent = parallel_training(episodes=1000000, num_workers=4)
-    current_agent1 = QLearningAgent.load("agent1_600000.pkl")
-    current_agent2 = QLearningAgent.load("agent2_600000.pkl")
+    # agent = parallel_training(episodes=1000000, num_workers=4, agent1=current_agent1, agent2=current_agent2)
+    agent = sequential_training(episodes=10000, agent1=agent1, agent2=agent2, start_i=0)
 
-    merged_agent = QLearningAgent.merge_agents(current_agent1, current_agent2)
-    merged_agent.save("merged_agent.pkl")
+    # merged_agent = QLearningAgent.merge_agents(current_agent1, current_agent2)
+    # merged_agent.save("merged_agent.pkl")
 
     # game = TicTacToe()
     # state = tuple(game.reset())

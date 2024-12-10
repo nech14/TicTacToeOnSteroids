@@ -21,6 +21,7 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
+GREEN = (0, 255, 0)
 
 # Шрифт
 font = pygame.font.SysFont(None, 40)
@@ -32,9 +33,10 @@ class TicTacToeGUI:
         self.current_player = 1
         self.game_over = False
         self.winner = None
-        self.selected_board = 0
+        self.selected_board = -1
         self.mode = 1
         self.wins_boards = np.zeros(9, dtype=int)
+        self.last_turn = [-1, -1, -1]
 
     def draw_board(self):
         screen.fill(WHITE)
@@ -62,11 +64,9 @@ class TicTacToeGUI:
                     10
                 )
 
-            # Проверка, если доска выбрана, обводим ее желтой рамкой
+            # Проверка, если доска выбрана, обводим ее зелённой рамкой
             if i == self.selected_board and not self.game_over:
-                pygame.draw.rect(screen, YELLOW, (board_x-1.5*MARGIN, board_y-1.5*MARGIN, BOARD_SIZE, BOARD_SIZE), 10)
-
-
+                pygame.draw.rect(screen, GREEN, (board_x-1.5*MARGIN, board_y-1.5*MARGIN, BOARD_SIZE, BOARD_SIZE), 10)
 
 
             for y in range(3):
@@ -76,7 +76,12 @@ class TicTacToeGUI:
                     cell_y = board_y + y * CELL_SIZE
 
                     pygame.draw.rect(screen, WHITE, (cell_x, cell_y, CELL_SIZE, CELL_SIZE))
-                    pygame.draw.rect(screen, BLACK, (cell_x, cell_y, CELL_SIZE, CELL_SIZE), 1)
+
+                    if self.last_turn[0] == i and self.last_turn[1] == x and self.last_turn[2] == y:
+                        pygame.draw.rect(screen, GREEN, (cell_x, cell_y, CELL_SIZE, CELL_SIZE), 3)
+                    else:
+                        pygame.draw.rect(screen, BLACK, (cell_x, cell_y, CELL_SIZE, CELL_SIZE), 1)
+
 
                     if value == 1:
                         text = font.render('X', True, RED)
@@ -99,25 +104,28 @@ class TicTacToeGUI:
                 self.winner = self.game.get_winner()
                 self.game_over = True
 
+
     def handle_click(self, x, y):
         if not self.game_over:
             # Находим индекс большой доски с учетом отступов
             board_x = (x - MARGIN) // (BOARD_SIZE + MARGIN)
             board_y = (y - MARGIN) // (BOARD_SIZE + MARGIN)
 
+
             # Проверяем, что клик попал в пределах доски
             if 0 <= board_x < 3 and 0 <= board_y < 3:
                 # Индекс выбранной большой доски от 0 до 8
                 board_index = board_y * 3 + board_x
-                self.selected_board = board_index
 
                 # Определяем координаты верхнего левого угла большой доски
                 board_start_x = board_x * (BOARD_SIZE + MARGIN) + MARGIN
                 board_start_y = board_y * (BOARD_SIZE + MARGIN) + MARGIN
 
+
                 # Находим индекс ячейки внутри большой доски (с учетом положения внутри этой доски)
                 cell_x = (x - board_start_x) // CELL_SIZE
                 cell_y = (y - board_start_y) // CELL_SIZE
+
 
                 # Проверяем, что клик попал в пределах ячейки
                 if 0 <= cell_x < 3 and 0 <= cell_y < 3:
@@ -126,9 +134,10 @@ class TicTacToeGUI:
 
                     # Вычисляем глобальный индекс ячейки на сетке 9x9
                     global_cell_index = board_index * 9 + cell_index
-                    print(f"Нажата глобальная ячейка: {global_cell_index}")  # Выводим индекс
+                    # print(f"Нажата глобальная ячейка: {global_cell_index}", self.last_turn[0])  # Выводим индекс
 
-                    result_step, _ = self.game.human_step(cell_x, cell_y, self.current_player)
+                    # result_step, _ = self.game.human_step(cell_x, cell_y, self.current_player)
+                    result_step, _ = self.game.step(global_cell_index, self.current_player)
                     if result_step is None:
                         print("Bad turn!")
                         pass
@@ -137,6 +146,8 @@ class TicTacToeGUI:
                         self.check_winner()
                         self.selected_board = self.game.active_desk
                         self.wins_boards = self.game.won_fields
+                        self.last_turn = [board_index, cell_x, cell_y]
+
 
 
 
@@ -170,10 +181,11 @@ def main():
                 winner_text = f"Draw in the game!"
             else:
                 winner_text = f"Player {ttt_gui.winner} wins!"
+            print(winner_text)
             text = font.render(winner_text, True, BLACK)
             screen.blit(text, (SCREEN_SIZE // 2.5, SCREEN_SIZE // 2))
             pygame.display.flip()
-            pygame.time.wait(3000)
+            pygame.time.wait(5000)
             running = False
 
     pygame.quit()

@@ -1,4 +1,5 @@
 import pygame
+from sympy import false
 
 from src.DQNAgent import DQNAgent
 from src.QLearningAgent import QLearningAgent
@@ -135,12 +136,16 @@ def train(agent_id="agen_1", episodes=1000000):
 
 def main():
     play_with_bot = True
-    current_agent = QLearningAgent.load("src/merged_agent.pkl")
+    # current_agent = QLearningAgent.load("src/agent1_9000.pkl")
+    current_agent = QLearningAgent.load("AI/agent1_9000.pkl")
+    # current_agent = 1
+    # current_agent = QLearningAgent.load("src/merged_agent.pkl")
 
     ttt_gui = TicTacToeGUI()
     state = tuple(ttt_gui.game.reset())
 
     running = True
+
     while running:
         ttt_gui.draw_board()
 
@@ -154,6 +159,7 @@ def main():
             ttt_gui.check_winner()
             ttt_gui.selected_board = ttt_gui.game.active_desk
             ttt_gui.wins_boards = ttt_gui.game.won_fields
+            ttt_gui.last_turn = [action//9, action%9%3, action%9//3]
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -170,10 +176,12 @@ def main():
                 winner_text = f"Draw in the game!"
             else:
                 winner_text = f"Player {ttt_gui.winner} wins!"
+
+            print(winner_text)
             text = font.render(winner_text, True, BLACK)
             screen.blit(text, (SCREEN_SIZE // 2.5, SCREEN_SIZE // 2))
             pygame.display.flip()
-            pygame.time.wait(3000)
+            pygame.time.wait(5000)
             running = False
 
     pygame.quit()

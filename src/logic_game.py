@@ -22,6 +22,8 @@ class TicTacToe():
 
 
     def available_actions(self):
+        if np.all(self.won_fields != 0):
+            return []
         if self.last_turn[0] == -1:
             return [i for i in range(9*3*3) if self.board.flatten()[i] == 0]
 
@@ -109,6 +111,7 @@ class TicTacToe():
 
         if np.all(self.board[field] != 0):
             return True
+
 
         return False
 
