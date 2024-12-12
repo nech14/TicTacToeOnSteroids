@@ -137,7 +137,7 @@ class TicTacToeGUI:
                     # print(f"Нажата глобальная ячейка: {global_cell_index}", self.last_turn[0])  # Выводим индекс
 
                     # result_step, _ = self.game.human_step(cell_x, cell_y, self.current_player)
-                    result_step, _ = self.game.step(global_cell_index, self.current_player)
+                    result_step, next_state = self.game.step(global_cell_index, self.current_player)
                     if result_step is None:
                         print("Bad turn!")
                         pass
@@ -147,50 +147,5 @@ class TicTacToeGUI:
                         self.selected_board = self.game.active_desk
                         self.wins_boards = self.game.won_fields
                         self.last_turn = [board_index, cell_x, cell_y]
-
-
-
-
-
-def main():
-    ttt_gui = TicTacToeGUI()
-
-    play_with_bot = False
-    turn = 1
-
-    running = True
-    while running:
-        turn = 3 - turn
-        ttt_gui.draw_board()
-
-        if play_with_bot and turn == 1:
-            pass
-        else:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        x, y = pygame.mouse.get_pos()
-                        ttt_gui.handle_click(x, y)
-
-        if ttt_gui.game_over:
-            ttt_gui.draw_board()
-            if ttt_gui.winner == 0:
-                winner_text = f"Draw in the game!"
-            else:
-                winner_text = f"Player {ttt_gui.winner} wins!"
-            print(winner_text)
-            text = font.render(winner_text, True, BLACK)
-            screen.blit(text, (SCREEN_SIZE // 2.5, SCREEN_SIZE // 2))
-            pygame.display.flip()
-            pygame.time.wait(5000)
-            running = False
-
-    pygame.quit()
-
-# if __name__ == "__main__":
-#     main()
-#
+                        return next_state
 
