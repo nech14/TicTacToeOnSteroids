@@ -1,6 +1,8 @@
 from tkinter.ttk import Treeview
 
 import numpy as np
+from pyopencl.cache import retrieve_from_cache
+
 
 
 class TicTacToe():
@@ -9,11 +11,12 @@ class TicTacToe():
     active_desk = 0
 
 
-    def __init__(self):
+    def __init__(self, gamemode=1):
         self.board = np.zeros((9,3,3), dtype=int)
         self.last_turn = [-1, 0, 0]
         self.won_fields = np.zeros(9, dtype=int)
         self.history = []
+        self.gamemode = gamemode
 
 
     def reset(self):
@@ -99,8 +102,9 @@ class TicTacToe():
             self.last_turn = self.history.pop()
         else:
             self.last_turn = [-1, 0, 0]
+            self.active_desk = 0
 
-        # Пересчитываем won_fields
+        # Пересчитываем won_fields заново
         for i in range(9):
             self.won_fields[i] = self.check_winner_field(i)
 
@@ -108,7 +112,7 @@ class TicTacToe():
         if self.last_turn[0] != -1:
             self.active_desk = self.last_turn[1] * 3 + self.last_turn[2]
         else:
-            self.active_desk = 0
+            self.active_desk = next((i for i, x in enumerate(self.won_fields) if x == 0), 0)
 
 
     def print_board(self):
@@ -154,6 +158,11 @@ class TicTacToe():
 
 
     def get_winner(self):
+
+        if self.gamemode == 3:
+            win_player = 3 - (len(self.history)%2 + 1)
+            return win_player
+
         player1 = np.count_nonzero(self.won_fields == 1)
         player2 = np.count_nonzero(self.won_fields == 2)
 

@@ -1,8 +1,54 @@
 import pygame
+import sys
 
 from src.QLearningAgent import QLearningAgent
 from src.gui import TicTacToeGUI, font, BLACK, SCREEN_SIZE, screen
 from src.minimax import find_best_move
+
+pygame.init()
+
+SCREEN_SIZE = 800
+screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
+pygame.display.set_caption("Game Mode Selection")
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+
+font = pygame.font.Font(None, 48)
+
+game_mode = None
+player_start = None
+
+
+
+def draw_button(text, x, y, w, h):
+    pygame.draw.rect(screen, BLUE, (x, y, w, h))
+    label = font.render(text, True, WHITE)
+    screen.blit(label, (x + 20, y + 10))
+
+def mode_selection():
+    global game_mode
+    while game_mode is None:
+        screen.fill(WHITE)
+        draw_button("Mode 1", 300, 250, 200, 60)
+        draw_button("Mode 2", 300, 350, 200, 60)
+        draw_button("Mode 3", 300, 450, 200, 60)
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                if 300 <= x <= 500:
+                    if 250 <= y <= 310:
+                        game_mode = 1
+                    elif 350 <= y <= 410:
+                        game_mode = 2
+                    elif 450 <= y <= 510:
+                        game_mode = 3
 
 
 def main():
@@ -61,13 +107,34 @@ def main():
     pygame.quit()
 
 
-def game_thiw_MM():
-    ttt_gui = TicTacToeGUI()
+def player_order_selection():
+    global player_start
+    while player_start is None:
+        screen.fill(WHITE)
+        draw_button("Player 1 Starts", 250, 300, 300, 60)
+        draw_button("Player 2 Starts", 250, 400, 300, 60)
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                if 250 <= x <= 550:
+                    if 300 <= y <= 360:
+                        player_start = 1
+                    elif 400 <= y <= 460:
+                        player_start = 2
+
+
+def game_thiw_MM(gamemode=1):
+    ttt_gui = TicTacToeGUI(gamemode)
     game = ttt_gui.game
     game.reset()
 
     player = 2  # Игрок 1 (ИИ)
-    depth = 4  # Глубина поиска
+    depth = 6  # Глубина поиска
 
 
     running = True
@@ -76,7 +143,7 @@ def game_thiw_MM():
         ttt_gui.draw_board()
 
         turn = ttt_gui.current_player
-
+        print(ttt_gui.game.won_fields)
         if turn == player:
             best_move = find_best_move(game, depth, player)
             is_done, board = game.step(best_move, player)
@@ -106,7 +173,7 @@ def game_thiw_MM():
             # ttt_gui.wins_boards = ttt_gui.game.won_fields
             # print("p2", best_move)
             # ttt_gui.last_turn = [best_move // 9, best_move % 9 % 3, best_move % 9 // 3]
-
+        ttt_gui.check_winner()
         if ttt_gui.game_over:
             ttt_gui.draw_board()
             if ttt_gui.winner == 0:
@@ -123,10 +190,15 @@ def game_thiw_MM():
 
     pygame.quit()
 
+#
+# if __name__ == "__main__":
+#     # main()
+#     game_thiw_MM()
+
 
 if __name__ == "__main__":
-    # main()
-    game_thiw_MM()
-
-
+    mode_selection()
+    player_order_selection()
+    print(game_mode, player_start)
+    game_thiw_MM(game_mode)
 

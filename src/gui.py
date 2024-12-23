@@ -28,13 +28,14 @@ font = pygame.font.SysFont(None, 40)
 
 # Класс игры
 class TicTacToeGUI:
-    def __init__(self):
-        self.game = TicTacToe()
+
+    def __init__(self, mode=1):
+        self.game = TicTacToe(mode)
         self.current_player = 1
         self.game_over = False
         self.winner = None
         self.selected_board = -1
-        self.mode = 1
+        self.mode = mode
         self.wins_boards = np.zeros(9, dtype=int)
         self.last_turn = [-1, -1, -1]
 
@@ -99,7 +100,7 @@ class TicTacToeGUI:
             if self.game.get_winner() != 0:
                 self.winner = self.game.get_winner()
                 self.game_over = True
-        elif self.mode == 1:
+        elif self.mode == 3:
             if len(self.game.available_actions()) == 0:
                 self.winner = self.game.get_winner()
                 self.game_over = True
