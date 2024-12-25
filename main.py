@@ -111,8 +111,9 @@ def player_order_selection():
     global player_start
     while player_start is None:
         screen.fill(WHITE)
-        draw_button("Player 1 Starts", 250, 300, 300, 60)
-        draw_button("Player 2 Starts", 250, 400, 300, 60)
+        draw_button("Player 1 Starts", 250, 250, 300, 60)
+        draw_button("Player 2 Starts", 250, 350, 300, 60)
+        draw_button("Two players", 250, 450, 300, 60)
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -122,71 +123,86 @@ def player_order_selection():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
                 if 250 <= x <= 550:
-                    if 300 <= y <= 360:
+                    if 250 <= y <= 310:
                         player_start = 1
-                    elif 400 <= y <= 460:
+                    elif 350 <= y <= 410:
                         player_start = 2
+                    elif 450 <= y <= 510:
+                        player_start = 3
 
 
-def game_thiw_MM(gamemode=1):
+def game_thiw_MM(gamemode=1, player=2):
     ttt_gui = TicTacToeGUI(gamemode)
     game = ttt_gui.game
     game.reset()
 
-    player = 2  # Игрок 1 (ИИ)
-    depth = 6  # Глубина поиска
+    depth = 6 # Глубина поиска
 
+    AI_player = 3 - player
 
     running = True
+    text_displayed = False
 
     while running:
         ttt_gui.draw_board()
 
+
         turn = ttt_gui.current_player
-        print(ttt_gui.game.won_fields)
-        if turn == player:
-            best_move = find_best_move(game, depth, player)
-            is_done, board = game.step(best_move, player)
-            ttt_gui.current_player = 3 - ttt_gui.current_player
+        # print(ttt_gui.game.won_fields)
+
+        if not ttt_gui.game_over:
+            if turn == AI_player:
+                best_move = find_best_move(game, depth, turn)
+                is_done, board = game.step(best_move, turn)
+                ttt_gui.current_player = 3 - ttt_gui.current_player
+                ttt_gui.check_winner()
+                ttt_gui.selected_board = ttt_gui.game.active_desk
+                ttt_gui.wins_boards = ttt_gui.game.won_fields
+                # print("p1", best_move)
+                ttt_gui.last_turn = [best_move // 9, best_move % 9 % 3, best_move % 9 // 3]
+
+
+
+            else:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            x, y = pygame.mouse.get_pos()
+                            next_state = ttt_gui.handle_click(x, y)
+                # best_move = find_best_move(game, depth, 3-player)
+                # is_done, board = game.step(best_move, 3-player)
+                # ttt_gui.current_player = 3 - ttt_gui.current_player
+                # ttt_gui.check_winner()
+                # ttt_gui.selected_board = ttt_gui.game.active_desk
+                # ttt_gui.wins_boards = ttt_gui.game.won_fields
+                # print("p2", best_move)
+                # ttt_gui.last_turn = [best_move // 9, best_move % 9 % 3, best_move % 9 // 3]
+
             ttt_gui.check_winner()
-            ttt_gui.selected_board = ttt_gui.game.active_desk
-            ttt_gui.wins_boards = ttt_gui.game.won_fields
-            # print("p1", best_move)
-            ttt_gui.last_turn = [best_move // 9, best_move % 9 % 3, best_move % 9 // 3]
 
 
-
-        else:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        x, y = pygame.mouse.get_pos()
-                        next_state = ttt_gui.handle_click(x, y)
-            # best_move = find_best_move(game, depth, 3-player)
-            # is_done, board = game.step(best_move, 3-player)
-            # ttt_gui.current_player = 3 - ttt_gui.current_player
-            # ttt_gui.check_winner()
-            # ttt_gui.selected_board = ttt_gui.game.active_desk
-            # ttt_gui.wins_boards = ttt_gui.game.won_fields
-            # print("p2", best_move)
-            # ttt_gui.last_turn = [best_move // 9, best_move % 9 % 3, best_move % 9 // 3]
-        ttt_gui.check_winner()
-        if ttt_gui.game_over:
+        elif ttt_gui.game_over and not text_displayed:
             ttt_gui.draw_board()
             if ttt_gui.winner == 0:
                 winner_text = f"Draw in the game!"
             else:
                 winner_text = f"Player {ttt_gui.winner} wins!"
 
-            print(winner_text)
+            # print(winner_text)
             text = font.render(winner_text, True, BLACK)
             screen.blit(text, (SCREEN_SIZE // 2.5, SCREEN_SIZE // 2))
             pygame.display.flip()
-            pygame.time.wait(5000)
-            running = False
+
+            pygame.time.wait(500)
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    running = False  # Закрыть игру при нажатии Enter
 
     pygame.quit()
 
@@ -200,5 +216,5 @@ if __name__ == "__main__":
     mode_selection()
     player_order_selection()
     print(game_mode, player_start)
-    game_thiw_MM(game_mode)
+    game_thiw_MM(game_mode, player_start)
 

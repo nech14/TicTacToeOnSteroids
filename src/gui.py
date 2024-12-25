@@ -96,14 +96,11 @@ class TicTacToeGUI:
 
     def check_winner(self):
         # Проверка победителя
-        if self.mode == 0:
-            if self.game.get_winner() != 0:
-                self.winner = self.game.get_winner()
-                self.game_over = True
-        elif self.mode == 3:
-            if len(self.game.available_actions()) == 0:
-                self.winner = self.game.get_winner()
-                self.game_over = True
+
+        if self.game.status:
+            self.game_over = self.game.status
+            self.winner = self.game.get_winner()
+
 
 
     def handle_click(self, x, y):
