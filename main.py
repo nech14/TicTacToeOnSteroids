@@ -1,25 +1,35 @@
+import multiprocessing
+
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+
 import pygame
 import sys
 
 from src.QLearningAgent import QLearningAgent
-from src.gui import TicTacToeGUI, font, BLACK, SCREEN_SIZE, screen
-from src.minimax import find_best_move
+from src.gui import TicTacToeGUI, initialize_pygame
+from src.minimax import find_best_move, find_best_move_CPU
 
-pygame.init()
 
 SCREEN_SIZE = 800
-screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
-pygame.display.set_caption("Game Mode Selection")
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 BLUE = (0, 0, 255)
 
-font = pygame.font.Font(None, 48)
+font = None
+screen = None
 
 game_mode = None
 player_start = None
 
+def init_pygame():
+    """Инициализирует Pygame и возвращает screen и font."""
+    pygame.init()
+    global screen, font
+    screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
+    pygame.display.set_caption("Game Mode Selection")
+    font = pygame.font.Font(None, 48)
 
 
 def draw_button(text, x, y, w, h):
@@ -132,11 +142,11 @@ def player_order_selection():
 
 
 def game_thiw_MM(gamemode=1, player=2):
-    ttt_gui = TicTacToeGUI(gamemode)
+    ttt_gui = TicTacToeGUI(screen, font, gamemode)
     game = ttt_gui.game
     game.reset()
 
-    depth = 6 # Глубина поиска
+    depth = 7 # Глубина поиска
 
     AI_player = 3 - player
 
@@ -146,13 +156,14 @@ def game_thiw_MM(gamemode=1, player=2):
     while running:
         ttt_gui.draw_board()
 
-
         turn = ttt_gui.current_player
         # print(ttt_gui.game.won_fields)
 
         if not ttt_gui.game_over:
             if turn == AI_player:
-                best_move = find_best_move(game, depth, turn)
+                # best_move = find_best_move(game, depth, turn)
+                best_move = find_best_move_CPU(game, depth, turn)
+                # best_move = find_best_move_CPU()
                 is_done, board = game.step(best_move, turn)
                 ttt_gui.current_player = 3 - ttt_gui.current_player
                 ttt_gui.check_winner()
@@ -160,7 +171,6 @@ def game_thiw_MM(gamemode=1, player=2):
                 ttt_gui.wins_boards = ttt_gui.game.won_fields
                 # print("p1", best_move)
                 ttt_gui.last_turn = [best_move // 9, best_move % 9 % 3, best_move % 9 // 3]
-
 
 
             else:
@@ -191,7 +201,7 @@ def game_thiw_MM(gamemode=1, player=2):
             else:
                 winner_text = f"Player {ttt_gui.winner} wins!"
 
-            # print(winner_text)
+            print(winner_text)
             text = font.render(winner_text, True, BLACK)
             screen.blit(text, (SCREEN_SIZE // 2.5, SCREEN_SIZE // 2))
             pygame.display.flip()
@@ -213,8 +223,13 @@ def game_thiw_MM(gamemode=1, player=2):
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn', force=True)  # Перенос в основную функцию
+    screen, font = initialize_pygame()
+
     mode_selection()
     player_order_selection()
+
+
     print(game_mode, player_start)
     game_thiw_MM(game_mode, player_start)
 

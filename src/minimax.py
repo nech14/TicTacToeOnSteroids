@@ -1,6 +1,15 @@
+import multiprocessing
+import sys
+
 import numpy as np
+import pygame
+
 from src.logic_game import TicTacToe
+from multiprocessing import Pool, cpu_count
+from functools import partial
 import time
+import copy
+
 #
 # def evaluate_state(game, player):
 #     opponent = 2 if player == 1 else 1
@@ -198,3 +207,64 @@ def find_best_move(game: TicTacToe, depth, player):
             best_move = action
 
     return best_move
+
+#
+# def evaluate_action():
+#     return 0, 0
+
+def evaluate_action(action, game, depth, alpha, beta, player):
+    game_copy = game.copy()
+    game_copy.step(action, player)
+    move_value = minimax_alpha_beta(game_copy, depth - 1, alpha, beta, False, 3-player)
+    pygame.quit()
+    return action, move_value
+
+
+# Параллельная версия find_best_move
+def find_best_move_CPU(game: TicTacToe, depth, player):
+
+    best_move = None
+    alpha = float('-inf')
+    beta = float('inf')
+    actions = game.available_actions()
+    copy_game = copy.deepcopy(game)
+
+    multiprocessing.set_start_method('spawn', force=True)
+    with Pool(cpu_count()) as pool:
+        results = pool.map(partial(evaluate_action, game=copy_game, depth=depth, alpha=alpha, beta=beta, player=player), actions)
+
+    best_move, _ = max(results, key=lambda x: x[1])
+
+    if best_move is None:
+        return np.random.choice(actions)
+
+    return best_move
+
+
+
+# # Параллельная версия find_best_move
+# def find_best_move_CPU():
+#
+#     best_move = None
+#     alpha = float('-inf')
+#     beta = float('inf')
+#     # actions = game.available_actions()
+#     # copy_game = copy.deepcopy(game)
+#     actions = [1, 2, 3, 4]
+#
+#     # if multiprocessing.current_process().name == 'MainProcess':
+#     #     init_pygame()
+#
+#     multiprocessing.set_start_method('spawn', force=True)
+#     with Pool(cpu_count()) as pool:
+#     #     print("Initializing Pygame in the main process...")
+#         # results = pool.map(partial(evaluate_action, game=copy_game, depth=depth, alpha=alpha, beta=beta, player=player), actions)
+#         results = pool.map(partial(evaluate_action), actions)
+#     # results = [(1,2)]
+#     best_move, _ = max(results, key=lambda x: x[1])
+#
+#     if best_move is None:
+#         return np.random.choice(actions)
+#
+#     return best_move
+#

@@ -181,11 +181,12 @@ class TicTacToe():
 
 
     def copy(self):
-        # Создаём копию текущего состояния игры
-        new_game = TicTacToe()
+        new_game = TicTacToe(self.gamemode)
         new_game.board = np.copy(self.board)
         new_game.last_turn = self.last_turn.copy()
         new_game.won_fields = self.won_fields.copy()
+        new_game.history = self.history.copy()
+        new_game.history_won_fields = self.history_won_fields.copy()
         return new_game
 
 

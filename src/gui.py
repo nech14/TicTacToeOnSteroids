@@ -4,16 +4,12 @@ import numpy as np
 
 from src.logic_game import TicTacToe
 
-# Инициализация Pygame
-pygame.init()
 
 # Настройки экрана
 SCREEN_SIZE = 800
 MARGIN = 10
 BOARD_SIZE = SCREEN_SIZE // 3 - MARGIN
 CELL_SIZE = BOARD_SIZE // 3 - MARGIN
-screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
-pygame.display.set_caption("Tic Tac Toe on Steroids")
 
 # Цвета
 WHITE = (255, 255, 255)
@@ -23,13 +19,25 @@ BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
 
-# Шрифт
-font = pygame.font.SysFont(None, 40)
+
+def initialize_pygame():
+    """
+    Единая функция для инициализации Pygame.
+    """
+
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
+    pygame.display.set_caption("Tic Tac Toe on Steroids")
+    font = pygame.font.Font(None, 48)
+
+    return screen, font
+
+
 
 # Класс игры
 class TicTacToeGUI:
 
-    def __init__(self, mode=1):
+    def __init__(self, screen, font , mode=1):
         self.game = TicTacToe(mode)
         self.current_player = 1
         self.game_over = False
@@ -38,9 +46,11 @@ class TicTacToeGUI:
         self.mode = mode
         self.wins_boards = np.zeros(9, dtype=int)
         self.last_turn = [-1, -1, -1]
+        self.screen = screen
+        self.font = font
 
     def draw_board(self):
-        screen.fill(WHITE)
+        self.screen.fill(WHITE)
 
         # # Рисуем внешнюю доску
         # for i in range(1, 3):
@@ -54,20 +64,20 @@ class TicTacToeGUI:
 
             if self.wins_boards[i] == 1:
                 pygame.draw.rect(
-                    screen, RED,
+                    self.screen, RED,
                     (board_x - 1.5 * MARGIN, board_y - 1.5 * MARGIN, BOARD_SIZE, BOARD_SIZE),
                     10
                 )
             elif self.wins_boards[i] == 2:
                 pygame.draw.rect(
-                    screen, BLUE,
+                    self.screen, BLUE,
                     (board_x - 1.5 * MARGIN, board_y - 1.5 * MARGIN, BOARD_SIZE, BOARD_SIZE),
                     10
                 )
 
             # Проверка, если доска выбрана, обводим ее зелённой рамкой
             if i == self.selected_board and not self.game_over:
-                pygame.draw.rect(screen, GREEN, (board_x-1.5*MARGIN, board_y-1.5*MARGIN, BOARD_SIZE, BOARD_SIZE), 10)
+                pygame.draw.rect(self.screen, GREEN, (board_x-1.5*MARGIN, board_y-1.5*MARGIN, BOARD_SIZE, BOARD_SIZE), 6)
 
 
             for y in range(3):
@@ -76,20 +86,20 @@ class TicTacToeGUI:
                     cell_x = board_x + x * CELL_SIZE
                     cell_y = board_y + y * CELL_SIZE
 
-                    pygame.draw.rect(screen, WHITE, (cell_x, cell_y, CELL_SIZE, CELL_SIZE))
+                    pygame.draw.rect(self.screen, WHITE, (cell_x, cell_y, CELL_SIZE, CELL_SIZE))
 
                     if self.last_turn[0] == i and self.last_turn[1] == x and self.last_turn[2] == y:
-                        pygame.draw.rect(screen, GREEN, (cell_x, cell_y, CELL_SIZE, CELL_SIZE), 3)
+                        pygame.draw.rect(self.screen, GREEN, (cell_x, cell_y, CELL_SIZE, CELL_SIZE), 3)
                     else:
-                        pygame.draw.rect(screen, BLACK, (cell_x, cell_y, CELL_SIZE, CELL_SIZE), 1)
+                        pygame.draw.rect(self.screen, BLACK, (cell_x, cell_y, CELL_SIZE, CELL_SIZE), 1)
 
 
                     if value == 1:
-                        text = font.render('X', True, RED)
-                        screen.blit(text, (cell_x + CELL_SIZE//3, cell_y + CELL_SIZE//3))
+                        text = self.font.render('X', True, RED)
+                        self.screen.blit(text, (cell_x + CELL_SIZE//3, cell_y + CELL_SIZE//3))
                     elif value == 2:
-                        text = font.render('O', True, BLUE)
-                        screen.blit(text, (cell_x + CELL_SIZE//3, cell_y + CELL_SIZE//3))
+                        text = self.font.render('O', True, BLUE)
+                        self.screen.blit(text, (cell_x + CELL_SIZE//3, cell_y + CELL_SIZE//3))
 
 
         pygame.display.flip()
