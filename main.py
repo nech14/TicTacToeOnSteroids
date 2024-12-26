@@ -5,6 +5,7 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 import pygame
 import sys
+import numpy as np
 
 from src.QLearningAgent import QLearningAgent
 from src.gui import TicTacToeGUI, initialize_pygame
@@ -146,7 +147,7 @@ def game_thiw_MM(gamemode=1, player=2):
     game = ttt_gui.game
     game.reset()
 
-    depth = 7 # Глубина поиска
+    base_depth = 7 # Глубина поиска
 
     AI_player = 3 - player
 
@@ -162,6 +163,9 @@ def game_thiw_MM(gamemode=1, player=2):
         if not ttt_gui.game_over:
             if turn == AI_player:
                 # best_move = find_best_move(game, depth, turn)
+                count_turn = np.sum(game.get_all_board() == 0)
+                depth = base_depth + (81-count_turn)//20
+
                 best_move = find_best_move_CPU(game, depth, turn)
                 # best_move = find_best_move_CPU()
                 is_done, board = game.step(best_move, turn)
