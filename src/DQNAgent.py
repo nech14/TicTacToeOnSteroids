@@ -1,68 +1,82 @@
-
-from src.DQN import DQN
-import torch.optim as optim
+import torch
 import torch.nn as nn
+import torch.optim as optim
 import numpy as np
 import random
-import torch
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+class DQNAgent(nn.Module):
+    def __init__(self, state_size, action_size):
+        super(DQNAgent, self).__init__()
+        self.state_size = state_size
+        self.action_size = action_size
+        self.model = nn.Sequential(
+            nn.Linear(state_size, 128),
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, action_size)
+        )
 
+    def forward(self, state):
+        return self.model(state)
 
-class DQNAgent:
-    def __init__(self, player, lr=0.001, gamma=0.99, epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995):
-        self.player = player
+class DeepQLearning:
+    def __init__(self, state_size, action_size, gamma=0.99, epsilon=1.0, lr=0.001):
+        self.state_size = state_size
+        self.action_size = action_size
         self.gamma = gamma
         self.epsilon = epsilon
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
-        self.model_81 = DQN(81).to(device)  # Модель для первого этапа (81 позиция)
-        self.model_9 = DQN(9).to(device)  # Модель для последующих этапов (9 позиций)
-        self.optimizer_81 = optim.Adam(self.model_81.parameters(), lr=lr)
-        self.optimizer_9 = optim.Adam(self.model_9.parameters(), lr=lr)
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.995
+        self.memory = []
+        self.batch_size = 64
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.dqn = DQNAgent(state_size, action_size).to(self.device)
+        self.optimizer = optim.Adam(self.dqn.parameters(), lr=lr)
         self.loss_fn = nn.MSELoss()
 
-    def choose_action(self, state, available_actions, stage='81_positions'):
+    def select_action(self, state):
         if np.random.rand() < self.epsilon:
-            return random.choice(available_actions)  # Exploration
-        state = torch.FloatTensor(state).to(device)
-        if stage == '81_positions':
-            q_values = self.model_81(state)
-        else:
-            q_values = self.model_9(state)
+            return random.randrange(self.action_size)
+        state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
+        q_values = self.dqn(state)
+        return torch.argmax(q_values).item()
 
-        q_values = q_values.cpu().detach().numpy()
-        q_values = np.where(np.isin(range(len(q_values)), available_actions, invert=True), -np.inf, q_values)
-        return np.argmax(q_values)
+    def store_transition(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+        if len(self.memory) > 10000:
+            self.memory.pop(0)
 
-    def update_q_value(self, state, action, reward, next_state, done, stage='81_positions'):
-        state = torch.FloatTensor(state).to(device)
-        next_state = torch.FloatTensor(next_state).to(device)
+    def train(self):
+        if len(self.memory) < self.batch_size:
+            return
 
-        # Преобразуем целевое значение в Float
-        target = torch.tensor(reward, dtype=torch.float32).to(device)
+        batch = random.sample(self.memory, self.batch_size)
+        states, actions, rewards, next_states, dones = zip(*batch)
 
-        if not done:
-            if stage == '81_positions':
-                target += self.gamma * torch.max(self.model_81(next_state)).item()
-            else:
-                target += self.gamma * torch.max(self.model_9(next_state)).item()
+        states = torch.FloatTensor(states).to(self.device)
+        actions = torch.LongTensor(actions).to(self.device)
+        rewards = torch.FloatTensor(rewards).to(self.device)
+        next_states = torch.FloatTensor(next_states).to(self.device)
+        dones = torch.FloatTensor(dones).to(self.device)
 
-        if stage == '81_positions':
-            current_q = self.model_81(state)[action]
-            loss = self.loss_fn(current_q, target)  # Приведение loss к float
-            self.optimizer_81.zero_grad()
-        else:
-            current_q = self.model_9(state)[action]
-            loss = self.loss_fn(current_q, target)  # Приведение loss к float
-            self.optimizer_9.zero_grad()
+        # Текущие Q-значения
+        q_values = self.dqn(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+        # Целевые Q-значения
+        next_q_values = self.dqn(next_states).max(1)[0]
+        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
 
+        # Обновление сети
+        loss = self.loss_fn(q_values, target_q_values.detach())
+        self.optimizer.zero_grad()
         loss.backward()
+        self.optimizer.step()
 
-        if stage == '81_positions':
-            self.optimizer_81.step()
-        else:
-            self.optimizer_9.step()
-
+        # Обновление epsilon
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+# Использование:
+# state_size — размер вектора состояния, action_size — количество действий
+agent = DeepQLearning(state_size=4, action_size=2)
