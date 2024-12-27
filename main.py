@@ -147,7 +147,7 @@ def game_thiw_MM(gamemode=1, player=2):
     game = ttt_gui.game
     game.reset()
 
-    base_depth = 7 # Глубина поиска
+    base_depth = 4 # Глубина поиска
 
     AI_player = 3 - player
 
